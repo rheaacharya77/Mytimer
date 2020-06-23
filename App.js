@@ -1,75 +1,194 @@
 
-import React, { Component } from 'react';
-import { View, Text, StyleSheet, Picker, AppState, Platform } from 'react-native';
-import PushController from './PushController';
-import PushNotification from 'react-native-push-notification';
+import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  StatusBar,
+  TouchableOpacity,
+  Dimensions,
+  Picker,
+  Platform,
+} from 'react-native';
+
+const screen = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#07121B',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    justifyContent: 'center',
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
+  button: {
+    borderWidth: 10,
+    borderColor: '#89AAFF',
+    width: screen.width / 2,
+    height: screen.width / 2,
+    borderRadius: screen.width / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+  },
+  buttonStop: {
+    borderColor: '#FF851B',
+  },
+  buttonText: {
+    fontSize: 45,
+    color: '#89AAFF',
+  },
+  buttonTextStop: {
+    color: '#FF851B',
+  },
+  timerText: {
+    color: '#fff',
+    fontSize: 90,
   },
   picker: {
-    width: 100,
+    width: 50,
+    ...Platform.select({
+      android: {
+        color: '#fff',
+        backgroundColor: '#07121B',
+        marginLeft: 10,
+      },
+    }),
+  },
+  pickerItem: {
+    color: '#fff',
+    fontSize: 20,
+  },
+  pickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
-export default class App extends Component {
-  constructor(props) {
-    super(props);
+// 3 => 03, 10 => 10
+const formatNumber = number => `0${number}`.slice(-2);
 
-    this.handleAppStateChange = this.handleAppStateChange.bind(this);
-    this.state = {
-      seconds: 5,
-    };
+const getRemaining = time => {
+  const minutes = Math.floor(time / 60);
+  const seconds = time - minutes * 60;
+  return { minutes: formatNumber(minutes), seconds: formatNumber(seconds) };
+};
+
+const createArray = length => {
+  const arr = [];
+  let i = 0;
+  while (i < length) {
+    arr.push(i.toString());
+    i += 1;
   }
 
-  componentDidMount() {
-    AppState.addEventListener('change', this.handleAppStateChange);
-  }
+  return arr;
+};
 
-  componentWillUnmount() {
-    AppState.removeEventListener('change', this.handleAppStateChange);
-  }
+const AVAILABLE_MINUTES = createArray(10);
+const AVAILABLE_SECONDS = createArray(60);
 
-  handleAppStateChange(appState) {
-    if (appState === 'background') {
-      let date = new Date(Date.now() + (this.state.seconds * 1000));
+export default class App extends React.Component {
+  state = {
+    remainingSeconds: 5,
+    isRunning: false,
+    selectedMinutes: '0',
+    selectedSeconds: '5',
+  };
 
-      if (Platform.OS === 'ios') {
-        date = date.toISOString();
-      }
+  interval = null;
 
-      PushNotification.localNotificationSchedule({
-        message: "My Notification Message",
-        date,
-      });
+  componentDidUpdate(prevProp, prevState) {
+    if (this.state.remainingSeconds === 0 && prevState.remainingSeconds !== 0) {
+      this.stop();
     }
   }
 
+  componentWillUnmount() {
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
+  }
+
+  start = () => {
+    this.setState(state => ({
+      remainingSeconds:
+        parseInt(state.selectedMinutes, 10) * 60 +
+        parseInt(state.selectedSeconds, 10),
+      isRunning: true,
+    }));
+
+    this.interval = setInterval(() => {
+      this.setState(state => ({
+        remainingSeconds: state.remainingSeconds - 1,
+      }));
+    }, 1000);
+  };
+
+  stop = () => {
+    clearInterval(this.interval);
+    this.interval = null;
+    this.setState({
+      remainingSeconds: 5, // temporary
+      isRunning: false,
+    });
+  };
+
+  renderPickers = () => (
+    <View style={styles.pickerContainer}>
+      <Picker
+        style={styles.picker}
+        itemStyle={styles.pickerItem}
+        selectedValue={this.state.selectedMinutes}
+        onValueChange={itemValue => {
+          this.setState({ selectedMinutes: itemValue });
+        }}
+        mode="dropdown"
+      >
+        {AVAILABLE_MINUTES.map(value => (
+          <Picker.Item key={value} label={value} value={value} />
+        ))}
+      </Picker>
+      <Text style={styles.pickerItem}>minutes</Text>
+      <Picker
+        style={styles.picker}
+        itemStyle={styles.pickerItem}
+        selectedValue={this.state.selectedSeconds}
+        onValueChange={itemValue => {
+          this.setState({ selectedSeconds: itemValue });
+        }}
+        mode="dropdown"
+      >
+        {AVAILABLE_SECONDS.map(value => (
+          <Picker.Item key={value} label={value} value={value} />
+        ))}
+      </Picker>
+      <Text style={styles.pickerItem}>seconds</Text>
+    </View>
+  );
+
   render() {
+    const { minutes, seconds } = getRemaining(this.state.remainingSeconds);
+
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Choose your notification time in seconds.
-        </Text>
-        <Picker
-          style={styles.picker}
-          selectedValue={this.state.seconds}
-          onValueChange={(seconds) => this.setState({ seconds })}
-        >
-          <Picker.Item label="5" value={5} />
-          <Picker.Item label="10" value={10} />
-          <Picker.Item label="15" value={15} />
-        </Picker>
-        <PushController />
+        <StatusBar barStyle="light-content" />
+        {this.state.isRunning ? (
+          <Text style={styles.timerText}>{`${minutes}:${seconds}`}</Text>
+        ) : (
+            this.renderPickers()
+          )}
+        {this.state.isRunning ? (
+          <TouchableOpacity
+            onPress={this.stop}
+            style={[styles.button, styles.buttonStop]}
+          >
+            <Text style={[styles.buttonText, styles.buttonTextStop]}>Stop</Text>
+          </TouchableOpacity>
+        ) : (
+            <TouchableOpacity onPress={this.start} style={styles.button}>
+              <Text style={styles.buttonText}>Start</Text>
+            </TouchableOpacity>
+          )}
       </View>
     );
   }
