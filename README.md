@@ -29,9 +29,9 @@ Go to the folder (through terminal)
 
 ## Some images:
 
-![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/IMG_20200713_184801.jpg)
+![]()
 
-![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/IMG_20200713_184815.jpg)
+![]()
 
 
 ## Built With
