@@ -19,7 +19,7 @@ What things you need to install the requirements and how to install them
 `npm install -g expo-cli`
 
 ### Expo app from playstore 
-`[Download](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_US)`
+[Download](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_US)
 
 Run
 To run the application:
