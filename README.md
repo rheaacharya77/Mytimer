@@ -30,7 +30,8 @@ Go to the folder (through terminal)
 
 ## Some images:
 
-![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/start.PNG) ![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/stop.PNG)
+![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/start.PNG)
+![](https://github.com/rheaacharya77/Mytimer/blob/master/assets/stop.PNG)
 
 
 ## Built With
